@@ -7,3 +7,6 @@ dist/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Python
+__pycache__/
