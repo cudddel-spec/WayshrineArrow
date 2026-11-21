@@ -344,13 +344,10 @@ local function BuildText(node, meters)
     return table.concat(lines, "\n")
 end
 
+-- Runs only while the arrow can be shown, see RefreshUpdateLoop.
 local function OnUpdate()
     if not sv.locked then
         ShowPlaceholder()
-        return
-    end
-    if inBlockedArea or (sv.hideInCombat and inCombat) then
-        HideArrow()
         return
     end
     if not EnsurePlayerMap() then return end
@@ -450,9 +447,22 @@ end
 -- Events
 ------------------------------------------------------------------------------------------------
 
+-- The update loop runs only while the arrow can be shown: switched on, and not in a dungeon, trial ... or in combat
+-- (with "Hide in combat"). While unlocked it always runs, because it shows the placeholder for moving.
+local function RefreshUpdateLoop()
+    EM:UnregisterForUpdate(UPDATE_NAME)
+    local canShow = not inBlockedArea and not (sv.hideInCombat and inCombat)
+    if sv.enabled and (canShow or not sv.locked) then
+        EM:RegisterForUpdate(UPDATE_NAME, UPDATE_INTERVAL_MS, OnUpdate)
+    else
+        HideArrow()
+    end
+end
+
 local function RefreshArea()
     inBlockedArea = IsInBlockedArea()
     nodesDirty = true
+    RefreshUpdateLoop()
 end
 
 -- for /wsarrow debug: what the game reports when entering buildings
@@ -480,7 +490,11 @@ end
 
 local function OnCombatState(_, isInCombat)
     inCombat = isInCombat
+    RefreshUpdateLoop()
 end
+
+-- The door hook cannot be removed again, so it is only installed once the arrow is switched on.
+local doorHookInstalled = false
 
 function WA.CheckEvents()
     EM:UnregisterForEvent(ADDON_NAME, EVENT_PLAYER_ACTIVATED)
@@ -488,12 +502,18 @@ function WA.CheckEvents()
     EM:UnregisterForEvent(ADDON_NAME, EVENT_FAST_TRAVEL_NETWORK_UPDATED)
     EM:UnregisterForEvent(ADDON_NAME, EVENT_PLAYER_COMBAT_STATE)
     EM:UnregisterForUpdate(UPDATE_NAME)
+    inCombat = false
 
     if not sv.enabled then
         HideArrow()
         return
     end
 
+    if not doorHookInstalled then
+        -- remember doors when the interact key is pressed; the hook returns nothing, so the interaction continues
+        ZO_PreHook(INTERACTIVE_WHEEL_MANAGER, "StartInteraction", OnInteractionStart)
+        doorHookInstalled = true
+    end
     EM:RegisterForEvent(ADDON_NAME, EVENT_PLAYER_ACTIVATED, OnPlayerActivated)
     EM:RegisterForEvent(ADDON_NAME, EVENT_ZONE_CHANGED, OnZoneChanged)
     EM:RegisterForEvent(ADDON_NAME, EVENT_FAST_TRAVEL_NETWORK_UPDATED, OnFastTravelNetworkUpdated)
@@ -501,7 +521,6 @@ function WA.CheckEvents()
         EM:RegisterForEvent(ADDON_NAME, EVENT_PLAYER_COMBAT_STATE, OnCombatState)
         inCombat = IsUnitInCombat("player")
     end
-    EM:RegisterForUpdate(UPDATE_NAME, UPDATE_INTERVAL_MS, OnUpdate)
     -- loading screens may have been missed while switched off
     segment = nil
     indoor, prevWorld, lastDoorInteract = nil, nil, nil
@@ -587,6 +606,8 @@ local function SetLocked(locked)
     -- the update loop also shows the placeholder while unlocked, so it must run
     if not locked and not sv.enabled then
         SetEnabled(true)
+    else
+        RefreshUpdateLoop()
     end
 end
 
@@ -902,8 +923,6 @@ local function OnAddOnLoaded(_, addonName)
     ApplyLayout()
     CreateSettings()
     SLASH_COMMANDS["/wsarrow"] = OnSlashCommand
-    -- remember doors when the interact key is pressed; the hook returns nothing, so the interaction continues
-    ZO_PreHook(INTERACTIVE_WHEEL_MANAGER, "StartInteraction", OnInteractionStart)
     WA.CheckEvents()
 end
 
