@@ -12,6 +12,14 @@ local UPDATE_NAME = ADDON_NAME .. "_Update"
 local UPDATE_INTERVAL_MS = 50
 local MAP_RESET_INTERVAL_MS = 1000   -- at most one SetMapToPlayerLocation() per second
 local CALIBRATION_MIN_SPAN = 0.005   -- normalized map distance needed before the map scale is measured
+local STATIC_WORLD_MOVE = 800        -- cm walked ...
+local STATIC_MAP_MOVE = 0.0002       -- ... while the map position moved less than this: inside a building
+local MISMATCH_TOLERANCE = 5000      -- cm, plus MISMATCH_FACTOR of the distance: world position does not fit the map
+local MISMATCH_FACTOR = 0.1
+local DOOR_VALID_MS = 10000          -- a jump this long after opening a door counts as going through it
+local DOOR_JUMP = 1000               -- cm between two updates: teleported by a door
+local DOOR_SAME_HEIGHT = 500         -- cm: back at the height of the entrance means outside again
+local INDOOR_RESTORE_RANGE = 15000   -- cm around the place inside where the saved state is restored
 local ARROW_TEXTURE = "EsoUI/Art/MapPins/UI-WorldMapPlayerPip.dds"
 
 local TARGET_ALL = 1
@@ -39,6 +47,7 @@ local DEFAULTS = {
     unknownColor = { 1, 0.78, 0.25, 1 },
     hideInCombat = false,
     hideNear = 0,
+    indoorByCharacter = {},   -- [characterId] = building without loading screen the character is in, see SetIndoor
     mapScale = {},   -- [mapId] = { ratio = world cm per normalized map unit, span = normalized span it was measured over }
 }
 
@@ -53,7 +62,7 @@ local inBlockedArea = false
 local inCombat = false
 local lastMapReset = 0
 local lastText
-local calibration = {}      -- anchor sample for measuring the map scale
+local segment               -- see StartSegment
 
 local sqrt, atan2, floor = math.sqrt, math.atan2, math.floor
 
@@ -133,23 +142,137 @@ local function FindNearest(px, py)
     return best, bestDist2 and sqrt(bestDist2)
 end
 
--- The map scale (centimeters per normalized map unit) is measured from the player's own movement:
--- world position and map position of two samples on the same map.
-local function Calibrate(mapId, px, py)
-    local _, worldX, _, worldZ = GetUnitRawWorldPosition("player")
-    if calibration.mapId ~= mapId then
-        calibration = { mapId = mapId, x = px, y = py, worldX = worldX, worldZ = worldZ }
+local function Distance(x1, y1, x2, y2)
+    local dx, dy = x1 - x2, y1 - y2
+    return sqrt(dx * dx + dy * dy)
+end
+
+-- A segment is the time on one map between two loading screens. It starts with a sample of map and world position.
+-- Buildings entered through a door with a loading screen (banks, shops, inns ...) are worlds of their own, but the
+-- game keeps showing the city or zone map. They are recognized in two ways:
+--  * the map position does not follow the world position while walking (sticky until the next loading screen)
+--  * the world position does not fit the measured map scale and anchor of this map
+local function StartSegment(mapId, px, py, worldX, worldZ)
+    segment = { mapId = mapId, x = px, y = py, worldX = worldX, worldZ = worldZ, isStatic = false }
+end
+
+-- Returns isInterior, worldDistToAnchor, expectedDistToAnchor (cm) for the debug output.
+local function CheckInterior(mapId, px, py, worldX, worldZ)
+    if not segment or segment.mapId ~= mapId then
+        StartSegment(mapId, px, py, worldX, worldZ)
+    end
+    if not segment.isStatic
+        and Distance(worldX, worldZ, segment.worldX, segment.worldZ) > STATIC_WORLD_MOVE
+        and Distance(px, py, segment.x, segment.y) < STATIC_MAP_MOVE then
+        segment.isStatic = true
+    end
+    local entry = sv.mapScale[mapId]
+    local worldDist, expected
+    if entry then
+        worldDist = Distance(worldX, worldZ, entry.worldX, entry.worldZ)
+        expected = Distance(px, py, entry.x, entry.y) * entry.ratio
+        if math.abs(worldDist - expected) > MISMATCH_TOLERANCE + MISMATCH_FACTOR * expected then
+            return true, worldDist, expected
+        end
+    end
+    return segment.isStatic, worldDist, expected
+end
+
+-- Buildings without a loading screen (the screen only turns black for a moment, e.g. inns in villages) lie in the
+-- same world, usually below the ground. They are recognized by the door: an "Open" interaction followed by a jump
+-- of the player position. The door names its destination: the outside location when leaving, the building otherwise.
+local lastDoorInteract      -- { name, at }
+local prevWorld             -- world position of the previous update
+local indoor                -- { mapId, entryY, name } while inside such a building
+local lastDoor = "-"        -- for /wsarrow debug
+local restorePending = false
+
+local function NormalizeName(name)
+    return zo_strlower(zo_strformat("<<1>>", name))
+end
+
+local function IsOutsideName(name)
+    local names = { GetPlayerLocationName(), GetPlayerActiveSubzoneName(), GetPlayerActiveZoneName(), GetMapName() }
+    for i = 1, #names do
+        if names[i] ~= "" and NormalizeName(names[i]) == name then return true end
+    end
+    return false
+end
+
+local function OnInteractionStart()
+    local action, name = GetGameCameraInteractableActionInfo()
+    if action == GetString(SI_GAMECAMERAACTIONTYPE13) and name and name ~= "" then
+        lastDoorInteract = { name = NormalizeName(name), at = GetFrameTimeMilliseconds() }
+    end
+end
+
+-- The state is also saved per character: after login or /reloadui inside the building the door is not seen again.
+local function SetIndoor(value)
+    indoor = value
+    sv.indoorByCharacter[GetCurrentCharacterId()] = value
+end
+
+-- After every loading screen (login, /reloadui, travel): restore the saved state if the player is still there,
+-- i.e. on the same map, near the place inside and not at the height of the entrance.
+local function RestoreIndoor(mapId, worldX, worldY, worldZ)
+    restorePending = false
+    local saved = sv.indoorByCharacter[GetCurrentCharacterId()]
+    if saved and saved.mapId == mapId
+        and Distance(worldX, worldZ, saved.x, saved.z) < INDOOR_RESTORE_RANGE
+        and math.abs(worldY - saved.entryY) >= DOOR_SAME_HEIGHT then
+        indoor = saved
+        lastDoor = "restored: " .. saved.name
+    else
+        SetIndoor(nil)
+    end
+end
+
+local function UpdateIndoor(mapId, worldX, worldY, worldZ)
+    if restorePending then
+        RestoreIndoor(mapId, worldX, worldY, worldZ)
+    end
+    local prev = prevWorld
+    prevWorld = { x = worldX, y = worldY, z = worldZ }
+    if indoor and indoor.mapId ~= mapId then SetIndoor(nil) end
+    if not prev or not lastDoorInteract then return end
+    if GetFrameTimeMilliseconds() - lastDoorInteract.at > DOOR_VALID_MS then
+        lastDoorInteract = nil
         return
     end
-    local dx, dy = px - calibration.x, py - calibration.y
-    local span = sqrt(dx * dx + dy * dy)
+    local dx, dy, dz = worldX - prev.x, worldY - prev.y, worldZ - prev.z
+    if dx * dx + dy * dy + dz * dz < DOOR_JUMP * DOOR_JUMP then return end
+
+    local name = lastDoorInteract.name
+    lastDoorInteract = nil
+    if indoor then
+        -- a door inside may also lead to another room (cellar, upper floor): only leave on the way out
+        if IsOutsideName(name) or math.abs(worldY - indoor.entryY) < DOOR_SAME_HEIGHT then
+            lastDoor = "out: " .. name
+            SetIndoor(nil)
+        else
+            lastDoor = "room: " .. name
+        end
+    elseif not IsOutsideName(name) then
+        lastDoor = "in: " .. name
+        SetIndoor({ mapId = mapId, entryY = prev.y, name = name, x = worldX, z = worldZ })
+    else
+        lastDoor = "outside: " .. name
+    end
+end
+
+-- The map scale (centimeters per normalized map unit) is measured from the player's own movement:
+-- world and map position at the start of the segment and now. The start sample is kept as anchor.
+local function Calibrate(mapId, px, py, worldX, worldZ)
+    local span = Distance(px, py, segment.x, segment.y)
     if span < CALIBRATION_MIN_SPAN then return end
     local entry = sv.mapScale[mapId]
     if entry and entry.span >= span then return end
-    local wx, wz = worldX - calibration.worldX, worldZ - calibration.worldZ
-    local worldDist = sqrt(wx * wx + wz * wz)
+    local worldDist = Distance(worldX, worldZ, segment.worldX, segment.worldZ)
     if worldDist > 0 then
-        sv.mapScale[mapId] = { ratio = worldDist / span, span = span }
+        sv.mapScale[mapId] = {
+            ratio = worldDist / span, span = span,
+            x = segment.x, y = segment.y, worldX = segment.worldX, worldZ = segment.worldZ,
+        }
     end
 end
 
@@ -230,7 +353,13 @@ local function OnUpdate()
         HideArrow()
         return
     end
-    Calibrate(mapId, px, py)
+    local _, worldX, worldY, worldZ = GetUnitRawWorldPosition("player")
+    UpdateIndoor(mapId, worldX, worldY, worldZ)
+    if indoor or CheckInterior(mapId, px, py, worldX, worldZ) then
+        HideArrow()
+        return
+    end
+    Calibrate(mapId, px, py, worldX, worldZ)
 
     local node, dist = FindNearest(px, py)
     if not node then
@@ -257,7 +386,8 @@ local function ApplyLayout()
     window:SetDimensions(size, size)
     window:ClearAnchors()
     window:SetAnchor(CENTER, GuiRoot, CENTER, sv.posX, sv.posY)
-    window:SetAlpha(sv.alpha)
+    -- on the content, not the window: the HUD fade fragment animates the window alpha back to 1
+    content:SetAlpha(sv.alpha)
     label:SetFont(string.format("$(BOLD_FONT)|%d|soft-shadow-thick", sv.fontSize))
     window:SetMovable(not sv.locked)
     window:SetMouseEnabled(not sv.locked)
@@ -313,11 +443,22 @@ local function RefreshArea()
     nodesDirty = true
 end
 
+-- for /wsarrow debug: what the game reports when entering buildings
+local lastZoneChange = "-"
+local activationCount = 0
+
 local function OnPlayerActivated()
+    activationCount = activationCount + 1
+    -- after every loading screen: new segment, it starts with the next sample on the player's map
+    segment = nil
+    indoor, prevWorld, lastDoorInteract = nil, nil, nil
+    restorePending = true
     RefreshArea()
 end
 
-local function OnZoneChanged()
+local function OnZoneChanged(_, zoneName, subZoneName, newSubzone, zoneId, subZoneId)
+    lastZoneChange = string.format("'%s' / '%s' (new %s, ids %s / %s)", tostring(zoneName), tostring(subZoneName),
+        tostring(newSubzone), tostring(zoneId), tostring(subZoneId))
     RefreshArea()
 end
 
@@ -349,6 +490,10 @@ function WA.CheckEvents()
         inCombat = IsUnitInCombat("player")
     end
     EM:RegisterForUpdate(UPDATE_NAME, UPDATE_INTERVAL_MS, OnUpdate)
+    -- loading screens may have been missed while switched off
+    segment = nil
+    indoor, prevWorld, lastDoorInteract = nil, nil, nil
+    restorePending = true
     RefreshArea()
 end
 
@@ -397,7 +542,31 @@ local function PrintDebug()
     local px, py, heading = GetMapPlayerPosition("player")
     local scale = sv.mapScale[GetCurrentMapId()]
     Print(string.format("map %s (id %d), wayshrines %d (known %d, unknown %d, outside %d), blocked %s",
-        GetMapName(), GetCurrentMapId(), onMap, known, onMap - known, outside, tostring(inBlockedArea)))
+        zo_strformat(SI_WORLD_MAP_LOCATION_NAME, GetMapName()), GetCurrentMapId(), onMap, known, onMap - known, outside,
+        tostring(inBlockedArea)))
+    if segment and segment.mapId == GetCurrentMapId() then
+        local _, worldX, _, worldZ = GetUnitRawWorldPosition("player")
+        local isInterior, worldDist, expected = CheckInterior(segment.mapId, px, py, worldX, worldZ)
+        local segWorld = Distance(worldX, worldZ, segment.worldX, segment.worldZ) / 100
+        local segMap = Distance(px, py, segment.x, segment.y)
+        Print(string.format("interior %s: walked %.1f m / map %.5f since loading (static %s), anchor %s",
+            tostring(isInterior), segWorld, segMap, tostring(segment.isStatic),
+            worldDist and string.format("%.0f m, expected %.0f m", worldDist / 100, expected / 100) or "-"))
+    else
+        Print("interior: no sample on this map yet")
+    end
+    -- candidates for recognizing buildings without a loading screen
+    local rawZoneId, _, rawY = GetUnitRawWorldPosition("player")
+    local zoneId, _, worldY = GetUnitWorldPosition("player")
+    local currentFloor, numFloors = GetMapFloorInfo()
+    Print(string.format("location '%s', zone '%s', subzone '%s', unit zone '%s'",
+        zo_strformat("<<1>>", GetPlayerLocationName()), zo_strformat("<<1>>", GetPlayerActiveZoneName()),
+        zo_strformat("<<1>>", GetPlayerActiveSubzoneName()), zo_strformat("<<1>>", GetUnitZone("player"))))
+    Print(string.format("map type %d, content %d, floor %d/%d, shows world %s, raw zone %d y %d, zone %d y %d",
+        GetMapType(), GetMapContentType(), currentFloor, numFloors, tostring(DoesCurrentMapShowPlayerWorld()),
+        rawZoneId, rawY, zoneId, worldY))
+    Print(string.format("loading screens %d, last zone change %s", activationCount, lastZoneChange))
+    Print(string.format("indoor %s, last door %s", indoor and ("yes (" .. indoor.name .. ")") or "no", lastDoor))
     Print(string.format("player %.4f / %.4f, heading %.2f, camera %.2f, scale %s",
         px, py, heading, GetPlayerCameraHeading(), scale and string.format("%.0f (span %.3f)", scale.ratio, scale.span) or "-"))
 end
@@ -598,11 +767,19 @@ local function OnAddOnLoaded(_, addonName)
 
     -- account-wide, one profile per server (the map scale cache is the same everywhere, the position is a UI choice)
     sv = ZO_SavedVars:NewAccountWide("WayshrineArrow_Saved", 1, nil, DEFAULTS, GetWorldName())
+    -- map scales from 0.1.0 have no anchor and may have been measured across a building door: measure again
+    for mapId, entry in pairs(sv.mapScale) do
+        if entry.worldX == nil then
+            sv.mapScale[mapId] = nil
+        end
+    end
 
     CreateControls()
     ApplyLayout()
     CreateSettings()
     SLASH_COMMANDS["/wsarrow"] = OnSlashCommand
+    -- remember doors when the interact key is pressed; the hook returns nothing, so the interaction continues
+    ZO_PreHook(INTERACTIVE_WHEEL_MANAGER, "StartInteraction", OnInteractionStart)
     WA.CheckEvents()
 end
 

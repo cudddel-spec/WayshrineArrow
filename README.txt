@@ -16,7 +16,8 @@ to travel on foot, explore a map anew or just want more immersion.
 - Optional below the arrow: name, status (known / unknown) and distance
 - Separate colors for known and unknown wayshrines
 - Hidden in delves, public and group dungeons, arenas, the Infinite Archive,
-  trials, battlegrounds and houses; optionally in combat or close to the target
+  trials, battlegrounds, houses and inside buildings (inns, banks, shops ...);
+  optionally in combat or close to the target
 - Settings with LibAddonMenu-2.0 (optional)
 
 Commands: /wsarrow [on | off | lock | unlock | target | reset | debug | settings]
@@ -37,8 +38,8 @@ Immersion möchten.
 - Wahlweise unter dem Pfeil: Name, Status (bekannt / unbekannt) und Entfernung
 - Eigene Farben für bekannte und unbekannte Wegschreine
 - Keine Anzeige in Gewölben, öffentlichen Verliesen, Gruppenverliesen, Arenen,
-  dem Endlosen Archiv, Prüfungen, Schlachtfeldern und Häusern; wahlweise auch
-  im Kampf oder nahe am Ziel
+  dem Endlosen Archiv, Prüfungen, Schlachtfeldern, Häusern und in Gebäuden
+  (Gasthäuser, Banken, Läden ...); wahlweise auch im Kampf oder nahe am Ziel
 - Einstellungen mit LibAddonMenu-2.0 (optional)
 
 Befehle: /wsarrow [on | off | lock | unlock | target | reset | debug | settings]

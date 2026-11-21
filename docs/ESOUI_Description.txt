@@ -11,6 +11,7 @@ A small, movable arrow on your HUD points in a straight line to the nearest ways
 [*]Optional below the arrow: name, status (known / unknown) and distance
 [*]Separate colors for known and unknown wayshrines, size, text size, opacity
 [*]Hidden in delves, public and group dungeons, arenas, the Infinite Archive, trials, battlegrounds and houses
+[*]Hidden inside buildings you enter through a door (inns, banks, shops ...)
 [*]Optionally hidden in combat or when you are close to the wayshrine
 [*]Keybinds: show/hide, switch target
 [*]Settings with LibAddonMenu-2.0 (optional)
@@ -39,6 +40,7 @@ Ein kleiner, verschiebbarer Pfeil im HUD zeigt in Luftlinie zum nächsten Wegsch
 [*]Wahlweise unter dem Pfeil: Name, Status (bekannt / unbekannt) und Entfernung
 [*]Eigene Farben für bekannte und unbekannte Wegschreine, Größe, Textgröße, Deckkraft
 [*]Keine Anzeige in Gewölben, öffentlichen Verliesen, Gruppenverliesen, Arenen, dem Endlosen Archiv, Prüfungen, Schlachtfeldern und Häusern
+[*]Keine Anzeige in Gebäuden, die man durch eine Tür betritt (Gasthäuser, Banken, Läden ...)
 [*]Wahlweise ausgeblendet im Kampf oder nahe am Wegschrein
 [*]Tastenbelegungen: ein-/ausblenden, Ziel wechseln
 [*]Einstellungen mit LibAddonMenu-2.0 (optional)

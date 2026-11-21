@@ -41,7 +41,7 @@ local strings = {
     SI_WAYSHRINEARROW_OPT_HIDE_COMBAT = "Hide in combat",
     SI_WAYSHRINEARROW_OPT_HIDE_NEAR = "Hide when closer than (m)",
     SI_WAYSHRINEARROW_OPT_HIDE_NEAR_TT = "0 = never hide. Needs the distance, so it works after a few steps on a new map.",
-    SI_WAYSHRINEARROW_OPT_INFO = "The arrow is hidden in delves, public and group dungeons, arenas, the Infinite Archive, trials, battlegrounds and houses.",
+    SI_WAYSHRINEARROW_OPT_INFO = "The arrow is hidden in delves, public and group dungeons, arenas, the Infinite Archive, trials, battlegrounds, houses and inside buildings entered through a door (inns, banks, shops ...).",
 }
 
 for id, text in pairs(strings) do

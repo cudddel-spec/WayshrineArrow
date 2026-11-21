@@ -40,7 +40,7 @@ local strings = {
     SI_WAYSHRINEARROW_OPT_HIDE_COMBAT = "Im Kampf ausblenden",
     SI_WAYSHRINEARROW_OPT_HIDE_NEAR = "Ausblenden näher als (m)",
     SI_WAYSHRINEARROW_OPT_HIDE_NEAR_TT = "0 = nie ausblenden. Braucht die Entfernung, wirkt auf einer neuen Karte also erst nach ein paar Schritten.",
-    SI_WAYSHRINEARROW_OPT_INFO = "In Gewölben, öffentlichen Verliesen, Gruppenverliesen, Arenen, dem Endlosen Archiv, Prüfungen, Schlachtfeldern und Häusern wird der Pfeil nicht angezeigt.",
+    SI_WAYSHRINEARROW_OPT_INFO = "In Gewölben, öffentlichen Verliesen, Gruppenverliesen, Arenen, dem Endlosen Archiv, Prüfungen, Schlachtfeldern, Häusern und in Gebäuden hinter einer Tür (Gasthäuser, Banken, Läden ...) wird der Pfeil nicht angezeigt.",
 }
 
 for id, text in pairs(strings) do
