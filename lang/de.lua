@@ -1,0 +1,48 @@
+-- German texts
+local strings = {
+    SI_BINDING_NAME_WAYSHRINEARROW_TOGGLE = "Wegschrein-Pfeil ein-/ausblenden",
+    SI_BINDING_NAME_WAYSHRINEARROW_CYCLE_TARGET = "Ziel wechseln (alle / unbekannt / bekannt)",
+
+    SI_WAYSHRINEARROW_KNOWN = "bekannt",
+    SI_WAYSHRINEARROW_UNKNOWN = "unbekannt",
+    SI_WAYSHRINEARROW_UNNAMED = "Wegschrein",
+    SI_WAYSHRINEARROW_DRAG_HINT = "Wegschrein-Pfeil – zum Verschieben ziehen",
+    SI_WAYSHRINEARROW_METERS = "<<1>> m",
+    SI_WAYSHRINEARROW_KILOMETERS = "<<1>> km",
+
+    SI_WAYSHRINEARROW_TARGET_ALL = "Nächster Wegschrein (bekannt oder unbekannt)",
+    SI_WAYSHRINEARROW_TARGET_UNKNOWN = "Nächster unbekannter Wegschrein",
+    SI_WAYSHRINEARROW_TARGET_KNOWN = "Nächster bekannter Wegschrein",
+
+    SI_WAYSHRINEARROW_MSG_ON = "Wegschrein-Pfeil eingeblendet.",
+    SI_WAYSHRINEARROW_MSG_OFF = "Wegschrein-Pfeil ausgeblendet.",
+    SI_WAYSHRINEARROW_MSG_LOCKED = "Wegschrein-Pfeil fixiert.",
+    SI_WAYSHRINEARROW_MSG_UNLOCKED = "Wegschrein-Pfeil gelöst – mit der Maus verschieben, danach wieder fixieren (/wsarrow lock).",
+    SI_WAYSHRINEARROW_MSG_TARGET = "Ziel: <<1>>",
+    SI_WAYSHRINEARROW_MSG_RESET = "Position zurückgesetzt.",
+
+    SI_WAYSHRINEARROW_OPT_ENABLED = "Pfeil anzeigen",
+    SI_WAYSHRINEARROW_OPT_TARGET = "Pfeil zeigt auf",
+    SI_WAYSHRINEARROW_OPT_TARGET_TT = "„Unbekannt“ eignet sich zum Erkunden: Sobald du einen Wegschrein entdeckst, zeigt der Pfeil auf den nächsten.",
+    SI_WAYSHRINEARROW_OPT_LOCKED = "Position fixieren",
+    SI_WAYSHRINEARROW_OPT_LOCKED_TT = "Lösen, um den Pfeil mit der Maus zu verschieben (Mauszeiger mit der Taste „.“ oder über ein Menü mit HUD einblenden).",
+    SI_WAYSHRINEARROW_OPT_RESET = "Position zurücksetzen",
+    SI_WAYSHRINEARROW_OPT_HEADER_DISPLAY = "Darstellung",
+    SI_WAYSHRINEARROW_OPT_SIZE = "Pfeilgröße",
+    SI_WAYSHRINEARROW_OPT_FONT_SIZE = "Textgröße",
+    SI_WAYSHRINEARROW_OPT_ALPHA = "Deckkraft",
+    SI_WAYSHRINEARROW_OPT_SHOW_NAME = "Namen des Wegschreins anzeigen",
+    SI_WAYSHRINEARROW_OPT_SHOW_STATUS = "Status anzeigen (bekannt / unbekannt)",
+    SI_WAYSHRINEARROW_OPT_SHOW_DISTANCE = "Entfernung anzeigen",
+    SI_WAYSHRINEARROW_OPT_SHOW_DISTANCE_TT = "Die Entfernung wird beim Laufen vermessen. Auf einer neuen Karte erscheint sie nach ein paar Schritten.",
+    SI_WAYSHRINEARROW_OPT_KNOWN_COLOR = "Farbe für bekannte Wegschreine",
+    SI_WAYSHRINEARROW_OPT_UNKNOWN_COLOR = "Farbe für unbekannte Wegschreine",
+    SI_WAYSHRINEARROW_OPT_HIDE_COMBAT = "Im Kampf ausblenden",
+    SI_WAYSHRINEARROW_OPT_HIDE_NEAR = "Ausblenden näher als (m)",
+    SI_WAYSHRINEARROW_OPT_HIDE_NEAR_TT = "0 = nie ausblenden. Braucht die Entfernung, wirkt auf einer neuen Karte also erst nach ein paar Schritten.",
+    SI_WAYSHRINEARROW_OPT_INFO = "In Gewölben, öffentlichen Verliesen, Gruppenverliesen, Arenen, dem Endlosen Archiv, Prüfungen, Schlachtfeldern und Häusern wird der Pfeil nicht angezeigt.",
+}
+
+for id, text in pairs(strings) do
+    SafeAddString(_G[id], text, 1)
+end

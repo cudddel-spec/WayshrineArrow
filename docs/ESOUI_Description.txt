@@ -1,0 +1,57 @@
+[SIZE="4"][B]WayshrineArrow[/B][/SIZE]
+
+[COLOR="Orange"][B]AI disclosure:[/B] The code of this addon was written with the help of an AI assistant (Claude by Anthropic). The author reviewed it, tested it in-game and is responsible for it.[/COLOR]
+
+[I]Deutsche Beschreibung weiter unten.[/I]
+
+A small, movable arrow on your HUD points in a straight line to the nearest wayshrine of the map you are on – known or unknown. Made for players who like to travel on foot, explore a map anew or just want more immersion.
+
+[LIST]
+[*]Target: nearest wayshrine, nearest [B]unknown[/B] wayshrine (great for exploring – after you discover one, the arrow turns to the next) or nearest known one
+[*]Optional below the arrow: name, status (known / unknown) and distance
+[*]Separate colors for known and unknown wayshrines, size, text size, opacity
+[*]Hidden in delves, public and group dungeons, arenas, the Infinite Archive, trials, battlegrounds and houses
+[*]Optionally hidden in combat or when you are close to the wayshrine
+[*]Keybinds: show/hide, switch target
+[*]Settings with LibAddonMenu-2.0 (optional)
+[/LIST]
+
+[B]Commands[/B]
+/wsarrow – show/hide
+/wsarrow unlock – drag the arrow with the mouse, then /wsarrow lock
+/wsarrow target – switch target, /wsarrow reset – reset position, /wsarrow settings
+
+[B]Notes[/B]
+[LIST]
+[*]The arrow uses the map you are on. In a city with its own map it points to the wayshrines of that city map.
+[*]The distance is measured from your own movement, so on a new map it appears after a few steps.
+[*]Settings are saved account-wide, separately for each server.
+[/LIST]
+
+[SIZE="3"][B]Deutsch[/B][/SIZE]
+
+[COLOR="Orange"][B]KI-Hinweis:[/B] Der Code dieses Addons wurde mit Hilfe eines KI-Assistenten (Claude von Anthropic) geschrieben. Der Autor hat ihn geprüft, im Spiel getestet und ist dafür verantwortlich.[/COLOR]
+
+Ein kleiner, verschiebbarer Pfeil im HUD zeigt in Luftlinie zum nächsten Wegschrein der aktuellen Karte – bekannt oder unbekannt. Gedacht für alle, die gern zu Fuß unterwegs sind, eine Karte neu erkunden oder einfach mehr Immersion möchten.
+
+[LIST]
+[*]Ziel: nächster Wegschrein, nächster [B]unbekannter[/B] (ideal zum Erkunden – nach der Entdeckung zeigt der Pfeil auf den nächsten) oder nächster bekannter
+[*]Wahlweise unter dem Pfeil: Name, Status (bekannt / unbekannt) und Entfernung
+[*]Eigene Farben für bekannte und unbekannte Wegschreine, Größe, Textgröße, Deckkraft
+[*]Keine Anzeige in Gewölben, öffentlichen Verliesen, Gruppenverliesen, Arenen, dem Endlosen Archiv, Prüfungen, Schlachtfeldern und Häusern
+[*]Wahlweise ausgeblendet im Kampf oder nahe am Wegschrein
+[*]Tastenbelegungen: ein-/ausblenden, Ziel wechseln
+[*]Einstellungen mit LibAddonMenu-2.0 (optional)
+[/LIST]
+
+[B]Befehle[/B]
+/wsarrow – ein-/ausblenden
+/wsarrow unlock – Pfeil mit der Maus verschieben, danach /wsarrow lock
+/wsarrow target – Ziel wechseln, /wsarrow reset – Position zurücksetzen, /wsarrow settings
+
+[B]Hinweise[/B]
+[LIST]
+[*]Der Pfeil nutzt die Karte, auf der du bist. In einer Stadt mit eigener Karte zeigt er auf die Wegschreine dieser Stadtkarte.
+[*]Die Entfernung wird aus deiner eigenen Bewegung vermessen; auf einer neuen Karte erscheint sie nach ein paar Schritten.
+[*]Einstellungen werden accountweit gespeichert, getrennt je Server.
+[/LIST]

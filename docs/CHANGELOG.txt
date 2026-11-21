@@ -1,0 +1,4 @@
+[B]0.1.0[/B]
+[LIST]
+[*]First version: HUD arrow to the nearest (known / unknown) wayshrine of the current map, name, status and distance, hidden in instances.
+[/LIST]
