@@ -20,11 +20,18 @@ to travel on foot, explore a map anew or just want more immersion.
   optionally in combat or close to the target
 - Settings with LibAddonMenu-2.0 (optional)
 
-Commands: /wsarrow [on | off | lock | unlock | target | reset | debug | settings]
+Commands: /wsarrow [on | off | lock | unlock | target | reset | account | character | debug | settings]
+Settings are separate for each server and account; "/wsarrow character" gives
+the current character its own settings, "/wsarrow account" switches back.
+In the settings menu you can copy the settings of another character.
 Move the arrow: /wsarrow unlock, drag it with the mouse, /wsarrow lock.
 
 The distance is measured from your own movement, so on a map you have not
 walked on yet it appears after a few steps.
+
+Buildings are recognized by their door. If a character logs in inside a
+building for the very first time, the arrow is shown until you walk out and
+in once; after that it is remembered, also across logins.
 
 --- Deutsch ---
 
@@ -42,8 +49,15 @@ Immersion möchten.
   (Gasthäuser, Banken, Läden ...); wahlweise auch im Kampf oder nahe am Ziel
 - Einstellungen mit LibAddonMenu-2.0 (optional)
 
-Befehle: /wsarrow [on | off | lock | unlock | target | reset | debug | settings]
+Befehle: /wsarrow [on | off | lock | unlock | target | reset | account | character | debug | settings]
+Einstellungen sind je Server und Account getrennt; "/wsarrow character" gibt dem
+aktuellen Charakter eigene Einstellungen, "/wsarrow account" schaltet zurück.
+Im Einstellungsmenü kannst du die Einstellungen eines anderen Charakters übernehmen.
 Pfeil verschieben: /wsarrow unlock, mit der Maus ziehen, /wsarrow lock.
 
 Die Entfernung wird aus deiner eigenen Bewegung vermessen; auf einer Karte,
 auf der du noch nicht gelaufen bist, erscheint sie nach ein paar Schritten.
+
+Gebäude werden an ihrer Tür erkannt. Loggt sich ein Charakter zum allerersten
+Mal in einem Gebäude ein, bleibt der Pfeil sichtbar, bis du einmal hinaus- und
+wieder hineingehst; danach merkt sich das Addon das, auch über Logins hinweg.

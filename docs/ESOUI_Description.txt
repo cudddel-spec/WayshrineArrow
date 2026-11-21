@@ -26,7 +26,8 @@ A small, movable arrow on your HUD points in a straight line to the nearest ways
 [LIST]
 [*]The arrow uses the map you are on. In a city with its own map it points to the wayshrines of that city map.
 [*]The distance is measured from your own movement, so on a new map it appears after a few steps.
-[*]Settings are saved account-wide, separately for each server.
+[*]Buildings are recognized by their door. If a character logs in inside a building for the very first time, the arrow is shown until you have walked out and in once; after that it is remembered, also across logins.
+[*]Settings are separate for each server (EU/NA) and account. Optionally every character gets its own settings ("Same settings for all characters" off, or /wsarrow character), and you can copy the settings of another character or the account-wide ones.
 [/LIST]
 
 [SIZE="3"][B]Deutsch[/B][/SIZE]
@@ -55,5 +56,6 @@ Ein kleiner, verschiebbarer Pfeil im HUD zeigt in Luftlinie zum nächsten Wegsch
 [LIST]
 [*]Der Pfeil nutzt die Karte, auf der du bist. In einer Stadt mit eigener Karte zeigt er auf die Wegschreine dieser Stadtkarte.
 [*]Die Entfernung wird aus deiner eigenen Bewegung vermessen; auf einer neuen Karte erscheint sie nach ein paar Schritten.
-[*]Einstellungen werden accountweit gespeichert, getrennt je Server.
+[*]Gebäude werden an ihrer Tür erkannt. Loggt sich ein Charakter zum allerersten Mal in einem Gebäude ein, bleibt der Pfeil sichtbar, bis du einmal hinaus- und wieder hineingegangen bist; danach merkt sich das Addon das, auch über Logins hinweg.
+[*]Einstellungen sind je Server (EU/NA) und Account getrennt. Wahlweise bekommt jeder Charakter eigene Einstellungen („Gleiche Einstellungen für alle Charaktere“ aus, oder /wsarrow character), und du kannst die Einstellungen eines anderen Charakters oder die accountweiten übernehmen.
 [/LIST]

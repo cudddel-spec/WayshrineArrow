@@ -47,11 +47,23 @@ local DEFAULTS = {
     unknownColor = { 1, 0.78, 0.25, 1 },
     hideInCombat = false,
     hideNear = 0,
-    indoorByCharacter = {},   -- [characterId] = building without loading screen the character is in, see SetIndoor
-    mapScale = {},   -- [mapId] = { ratio = world cm per normalized map unit, span = normalized span it was measured over }
 }
 
-local sv
+-- SavedVariables, all with GetWorldName() as profile: WayshrineArrow_Saved[server][@account][...]
+--  * account-wide: the account-wide settings (DEFAULTS) plus data that is the same for all characters
+--  * per character id: the character's own settings (DEFAULTS) and the choice which settings it uses
+local ACCOUNT_DEFAULTS = ZO_ShallowTableCopy(DEFAULTS, {
+    indoorByCharacter = {},   -- [characterId] = building without loading screen the character is in, see SetIndoor
+    mapScale = {},   -- [mapId] = { ratio = world cm per normalized map unit, span = normalized span it was measured over }
+})
+local CHARACTER_DEFAULTS = ZO_ShallowTableCopy(DEFAULTS, {
+    useAccountWide = true,
+    copiedFromAccount = false,   -- own settings start as a copy of the account-wide ones
+})
+
+local accountSV, characterSV
+local sv     -- settings in use: accountSV or characterSV
+local data   -- account-wide data: accountSV
 local window, content, backdrop, arrow, label
 
 -- state
@@ -166,7 +178,7 @@ local function CheckInterior(mapId, px, py, worldX, worldZ)
         and Distance(px, py, segment.x, segment.y) < STATIC_MAP_MOVE then
         segment.isStatic = true
     end
-    local entry = sv.mapScale[mapId]
+    local entry = data.mapScale[mapId]
     local worldDist, expected
     if entry then
         worldDist = Distance(worldX, worldZ, entry.worldX, entry.worldZ)
@@ -209,14 +221,14 @@ end
 -- The state is also saved per character: after login or /reloadui inside the building the door is not seen again.
 local function SetIndoor(value)
     indoor = value
-    sv.indoorByCharacter[GetCurrentCharacterId()] = value
+    data.indoorByCharacter[GetCurrentCharacterId()] = value
 end
 
 -- After every loading screen (login, /reloadui, travel): restore the saved state if the player is still there,
 -- i.e. on the same map, near the place inside and not at the height of the entrance.
 local function RestoreIndoor(mapId, worldX, worldY, worldZ)
     restorePending = false
-    local saved = sv.indoorByCharacter[GetCurrentCharacterId()]
+    local saved = data.indoorByCharacter[GetCurrentCharacterId()]
     if saved and saved.mapId == mapId
         and Distance(worldX, worldZ, saved.x, saved.z) < INDOOR_RESTORE_RANGE
         and math.abs(worldY - saved.entryY) >= DOOR_SAME_HEIGHT then
@@ -265,11 +277,11 @@ end
 local function Calibrate(mapId, px, py, worldX, worldZ)
     local span = Distance(px, py, segment.x, segment.y)
     if span < CALIBRATION_MIN_SPAN then return end
-    local entry = sv.mapScale[mapId]
+    local entry = data.mapScale[mapId]
     if entry and entry.span >= span then return end
     local worldDist = Distance(worldX, worldZ, segment.worldX, segment.worldZ)
     if worldDist > 0 then
-        sv.mapScale[mapId] = {
+        data.mapScale[mapId] = {
             ratio = worldDist / span, span = span,
             x = segment.x, y = segment.y, worldX = segment.worldX, worldZ = segment.worldZ,
         }
@@ -277,7 +289,7 @@ local function Calibrate(mapId, px, py, worldX, worldZ)
 end
 
 local function GetDistanceMeters(mapId, normalizedDist)
-    local entry = sv.mapScale[mapId]
+    local entry = data.mapScale[mapId]
     if entry then
         return normalizedDist * entry.ratio / 100
     end
@@ -501,6 +513,69 @@ end
 -- Commands
 ------------------------------------------------------------------------------------------------
 
+-- Switches between the account-wide settings and the character's own ones. The own settings start as a copy
+-- of the account-wide ones the first time they are used.
+local function SetUseAccountWide(useAccountWide)
+    characterSV.useAccountWide = useAccountWide
+    if not useAccountWide and not characterSV.copiedFromAccount then
+        for key in pairs(DEFAULTS) do
+            local value = accountSV[key]
+            characterSV[key] = type(value) == "table" and ZO_DeepTableCopy(value) or value
+        end
+        characterSV.copiedFromAccount = true
+    end
+    sv = useAccountWide and accountSV or characterSV
+    ApplyLayout()
+    WA.CheckEvents()
+end
+
+local ACCOUNT_WIDE_KEY = "$AccountWide"
+
+-- The raw saved settings of this account on this server: [characterId or "$AccountWide"] = settings
+local function GetRawAccountTable()
+    local servers = WayshrineArrow_Saved or {}
+    local accounts = servers[GetWorldName()] or {}
+    return accounts[GetDisplayName()] or {}
+end
+
+-- Sources for copying settings: the account-wide settings and every other character of this account on this
+-- server that has its own settings (characters with shared settings would only copy the account-wide ones).
+local function GetCopySources()
+    local names = { GetString(SI_WAYSHRINEARROW_COPY_ACCOUNT_WIDE) }
+    local ids = { ACCOUNT_WIDE_KEY }
+    local others = {}
+    local ownId = GetCurrentCharacterId()
+    for key, entry in pairs(GetRawAccountTable()) do
+        if key ~= ACCOUNT_WIDE_KEY and key ~= ownId and type(entry) == "table" and entry.useAccountWide == false then
+            others[#others + 1] = { id = key, name = zo_strformat("<<1>>", entry["$LastCharacterName"] or key) }
+        end
+    end
+    table.sort(others, function(a, b) return a.name < b.name end)
+    for i = 1, #others do
+        names[#names + 1] = others[i].name
+        ids[#ids + 1] = others[i].id
+    end
+    return names, ids
+end
+
+-- Copies the settings of another character (or the account-wide ones) into this character's own settings.
+-- This character uses its own settings afterwards, so the copy never changes other characters.
+local function CopySettingsFrom(sourceId)
+    local source = GetRawAccountTable()[sourceId]
+    if not source or sourceId == GetCurrentCharacterId() then return false end
+    for key, default in pairs(DEFAULTS) do
+        local value = source[key]
+        if value == nil then value = default end
+        characterSV[key] = type(value) == "table" and ZO_DeepTableCopy(value) or value
+    end
+    characterSV.useAccountWide = false
+    characterSV.copiedFromAccount = true
+    sv = characterSV
+    ApplyLayout()
+    WA.CheckEvents()
+    return true
+end
+
 local function SetEnabled(enabled)
     sv.enabled = enabled
     WA.CheckEvents()
@@ -540,10 +615,12 @@ local function PrintDebug()
         end
     end
     local px, py, heading = GetMapPlayerPosition("player")
-    local scale = sv.mapScale[GetCurrentMapId()]
+    local scale = data.mapScale[GetCurrentMapId()]
     Print(string.format("map %s (id %d), wayshrines %d (known %d, unknown %d, outside %d), blocked %s",
         zo_strformat(SI_WORLD_MAP_LOCATION_NAME, GetMapName()), GetCurrentMapId(), onMap, known, onMap - known, outside,
         tostring(inBlockedArea)))
+    Print(string.format("settings %s, server '%s', account %s", characterSV.useAccountWide and "account-wide" or "character",
+        GetWorldName(), GetDisplayName()))
     if segment and segment.mapId == GetCurrentMapId() then
         local _, worldX, _, worldZ = GetUnitRawWorldPosition("player")
         local isInterior, worldDist, expected = CheckInterior(segment.mapId, px, py, worldX, worldZ)
@@ -595,6 +672,12 @@ local function OnSlashCommand(args)
         sv.posX, sv.posY = DEFAULTS.posX, DEFAULTS.posY
         ApplyLayout()
         Print(GetString(SI_WAYSHRINEARROW_MSG_RESET))
+    elseif cmd == "account" then
+        SetUseAccountWide(true)
+        Print(GetString(SI_WAYSHRINEARROW_MSG_ACCOUNT))
+    elseif cmd == "character" then
+        SetUseAccountWide(false)
+        Print(GetString(SI_WAYSHRINEARROW_MSG_CHARACTER))
     elseif cmd == "debug" then
         PrintDebug()
     elseif cmd == "settings" and settingsPanel then
@@ -621,6 +704,10 @@ local function CreateSettings()
         slashCommand = "/wsarrowsettings",
         registerForRefresh = true,
     })
+
+    -- other characters are only known from the SavedVariables, so the list is built once when the panel is created
+    local copyNames, copyIds = GetCopySources()
+    local copyFrom = copyIds[1]
 
     local function refreshText()
         lastText = nil
@@ -655,6 +742,40 @@ local function CreateSettings()
 
     LAM:RegisterOptionControls("WayshrineArrow_Settings", {
         { type = "description", text = GetString(SI_WAYSHRINEARROW_OPT_INFO) },
+        {
+            type = "checkbox",
+            name = GetString(SI_WAYSHRINEARROW_OPT_ACCOUNT_WIDE),
+            tooltip = GetString(SI_WAYSHRINEARROW_OPT_ACCOUNT_WIDE_TT),
+            getFunc = function() return characterSV.useAccountWide end,
+            setFunc = SetUseAccountWide,
+            default = CHARACTER_DEFAULTS.useAccountWide,
+        },
+        {
+            type = "dropdown",
+            name = GetString(SI_WAYSHRINEARROW_OPT_COPY_FROM),
+            tooltip = GetString(SI_WAYSHRINEARROW_OPT_COPY_FROM_TT),
+            choices = copyNames,
+            choicesValues = copyIds,
+            getFunc = function() return copyFrom end,
+            setFunc = function(value) copyFrom = value end,
+            scrollable = true,
+        },
+        {
+            type = "button",
+            name = GetString(SI_WAYSHRINEARROW_OPT_COPY),
+            tooltip = GetString(SI_WAYSHRINEARROW_OPT_COPY_TT),
+            isDangerous = true,
+            warning = GetString(SI_WAYSHRINEARROW_OPT_COPY_WARNING),
+            func = function()
+                if CopySettingsFrom(copyFrom) then
+                    for i = 1, #copyIds do
+                        if copyIds[i] == copyFrom then
+                            Print(zo_strformat(SI_WAYSHRINEARROW_MSG_COPIED, copyNames[i]))
+                        end
+                    end
+                end
+            end,
+        },
         {
             type = "checkbox",
             name = GetString(SI_WAYSHRINEARROW_OPT_ENABLED),
@@ -765,12 +886,15 @@ local function OnAddOnLoaded(_, addonName)
     if addonName ~= ADDON_NAME then return end
     EM:UnregisterForEvent(ADDON_NAME, EVENT_ADD_ON_LOADED)
 
-    -- account-wide, one profile per server (the map scale cache is the same everywhere, the position is a UI choice)
-    sv = ZO_SavedVars:NewAccountWide("WayshrineArrow_Saved", 1, nil, DEFAULTS, GetWorldName())
+    -- one profile per server, separate for every account (ZO_SavedVars adds GetDisplayName())
+    accountSV = ZO_SavedVars:NewAccountWide("WayshrineArrow_Saved", 1, nil, ACCOUNT_DEFAULTS, GetWorldName())
+    characterSV = ZO_SavedVars:NewCharacterIdSettings("WayshrineArrow_Saved", 1, nil, CHARACTER_DEFAULTS, GetWorldName())
+    data = accountSV
+    sv = characterSV.useAccountWide and accountSV or characterSV
     -- map scales from 0.1.0 have no anchor and may have been measured across a building door: measure again
-    for mapId, entry in pairs(sv.mapScale) do
+    for mapId, entry in pairs(data.mapScale) do
         if entry.worldX == nil then
-            sv.mapScale[mapId] = nil
+            data.mapScale[mapId] = nil
         end
     end
 

@@ -1,4 +1,4 @@
 [B]0.1.0[/B]
 [LIST]
-[*]First version: HUD arrow to the nearest (known / unknown) wayshrine of the current map, name, status and distance, hidden in instances and inside buildings.
+[*]First version: HUD arrow to the nearest (known / unknown) wayshrine of the current map, name, status and distance, hidden in instances and inside buildings. Settings per server and account, optionally per character, copy settings from another character.
 [/LIST]
