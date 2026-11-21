@@ -18,13 +18,39 @@ to travel on foot, explore a map anew or just want more immersion.
 - Hidden in delves, public and group dungeons, arenas, the Infinite Archive,
   trials, battlegrounds, houses and inside buildings (inns, banks, shops ...);
   optionally in combat or close to the target
-- Settings with LibAddonMenu-2.0 (optional)
+- Settings menu with LibAddonMenu-2.0 (optional) - every setting is also
+  available as a chat command
 
-Commands: /wsarrow [on | off | lock | unlock | target | reset | account | character | debug | settings]
-Settings are separate for each server and account; "/wsarrow character" gives
-the current character its own settings, "/wsarrow account" switches back.
-In the settings menu you can copy the settings of another character.
-Move the arrow: /wsarrow unlock, drag it with the mouse, /wsarrow lock.
+Settings are separate for each server (EU/NA) and account. Optionally every
+character gets its own settings, and you can copy the settings of another
+character.
+
+Commands (keywords are English in every language):
+  /wsarrow                        show / hide (also: on, off)
+  /wsarrow unlock | lock          move the arrow with the mouse / fix it
+  /wsarrow reset                  move the arrow back to its start position
+  /wsarrow target [all | unknown | known]
+                                  what the arrow points to (no value: next)
+  /wsarrow name [on | off]        wayshrine name below the arrow
+  /wsarrow status [on | off]      status (known / unknown) below the arrow
+  /wsarrow distance [on | off]    distance below the arrow
+  /wsarrow combat [on | off]      hide in combat
+                                  (without on/off the setting is switched)
+  /wsarrow near <0-100>           hide when closer than this many meters
+  /wsarrow size <24-160>          arrow size
+  /wsarrow font <12-36>           text size
+  /wsarrow alpha <20-100>         opacity in percent
+  /wsarrow color known <RRGGBB>   color for known wayshrines, e.g. 73D9FF
+  /wsarrow color unknown <RRGGBB> color for unknown wayshrines, e.g. FFC740
+  /wsarrow color known reset      default color (also for unknown)
+  /wsarrow account                same settings for all characters
+  /wsarrow character              own settings for this character
+  /wsarrow copy                   list characters with own settings
+  /wsarrow copy <name | account>  copy their settings to this character
+  /wsarrow show                   current settings
+  /wsarrow settings               settings menu (needs LibAddonMenu-2.0)
+  /wsarrow help                   all commands
+  /wsarrow debug                  information for bug reports
 
 The distance is measured from your own movement, so on a map you have not
 walked on yet it appears after a few steps.
@@ -47,13 +73,40 @@ Immersion möchten.
 - Keine Anzeige in Gewölben, öffentlichen Verliesen, Gruppenverliesen, Arenen,
   dem Endlosen Archiv, Prüfungen, Schlachtfeldern, Häusern und in Gebäuden
   (Gasthäuser, Banken, Läden ...); wahlweise auch im Kampf oder nahe am Ziel
-- Einstellungen mit LibAddonMenu-2.0 (optional)
+- Einstellungsmenü mit LibAddonMenu-2.0 (optional) - jede Einstellung geht
+  auch als Chat-Befehl
 
-Befehle: /wsarrow [on | off | lock | unlock | target | reset | account | character | debug | settings]
-Einstellungen sind je Server und Account getrennt; "/wsarrow character" gibt dem
-aktuellen Charakter eigene Einstellungen, "/wsarrow account" schaltet zurück.
-Im Einstellungsmenü kannst du die Einstellungen eines anderen Charakters übernehmen.
-Pfeil verschieben: /wsarrow unlock, mit der Maus ziehen, /wsarrow lock.
+Einstellungen sind je Server (EU/NA) und Account getrennt. Wahlweise bekommt
+jeder Charakter eigene Einstellungen, und du kannst die Einstellungen eines
+anderen Charakters übernehmen.
+
+Befehle (die Schlüsselwörter sind in jeder Sprache englisch):
+  /wsarrow                        ein-/ausblenden (auch: on, off)
+  /wsarrow unlock | lock          Pfeil mit der Maus verschieben / fixieren
+  /wsarrow reset                  Pfeil zurück an die Startposition
+  /wsarrow target [all | unknown | known]
+                                  Ziel: alle / unbekannte / bekannte Wegschreine
+                                  (ohne Wert: nächstes Ziel)
+  /wsarrow name [on | off]        Name des Wegschreins unter dem Pfeil
+  /wsarrow status [on | off]      Status (bekannt / unbekannt) unter dem Pfeil
+  /wsarrow distance [on | off]    Entfernung unter dem Pfeil
+  /wsarrow combat [on | off]      im Kampf ausblenden
+                                  (ohne on/off wird umgeschaltet; an/aus geht auch)
+  /wsarrow near <0-100>           ausblenden näher als so viele Meter
+  /wsarrow size <24-160>          Pfeilgröße
+  /wsarrow font <12-36>           Textgröße
+  /wsarrow alpha <20-100>         Deckkraft in Prozent
+  /wsarrow color known <RRGGBB>   Farbe für bekannte Wegschreine, z. B. 73D9FF
+  /wsarrow color unknown <RRGGBB> Farbe für unbekannte Wegschreine, z. B. FFC740
+  /wsarrow color known reset      Standardfarbe (auch für unknown)
+  /wsarrow account                gleiche Einstellungen für alle Charaktere
+  /wsarrow character              eigene Einstellungen für diesen Charakter
+  /wsarrow copy                   Charaktere mit eigenen Einstellungen auflisten
+  /wsarrow copy <Name | account>  deren Einstellungen übernehmen
+  /wsarrow show                   aktuelle Einstellungen
+  /wsarrow settings               Einstellungsmenü (braucht LibAddonMenu-2.0)
+  /wsarrow help                   alle Befehle
+  /wsarrow debug                  Angaben für Fehlermeldungen
 
 Die Entfernung wird aus deiner eigenen Bewegung vermessen; auf einer Karte,
 auf der du noch nicht gelaufen bist, erscheint sie nach ein paar Schritten.

@@ -14,13 +14,23 @@ A small, movable arrow on your HUD points in a straight line to the nearest ways
 [*]Hidden inside buildings you enter through a door (inns, banks, shops ...)
 [*]Optionally hidden in combat or when you are close to the wayshrine
 [*]Keybinds: show/hide, switch target
-[*]Settings with LibAddonMenu-2.0 (optional)
+[*]Settings menu with LibAddonMenu-2.0 (optional) – every setting is also available as a chat command
 [/LIST]
 
-[B]Commands[/B]
-/wsarrow – show/hide
-/wsarrow unlock – drag the arrow with the mouse, then /wsarrow lock
-/wsarrow target – switch target, /wsarrow reset – reset position, /wsarrow settings
+[B]Commands[/B] (keywords are English in every language)
+[LIST]
+[*][B]/wsarrow[/B] – show / hide (also [B]on[/B], [B]off[/B])
+[*][B]/wsarrow unlock[/B] – drag the arrow with the mouse, then [B]/wsarrow lock[/B]; [B]/wsarrow reset[/B] – start position
+[*][B]/wsarrow target [all | unknown | known][/B] – what the arrow points to (no value: next one)
+[*][B]/wsarrow name | status | distance [on | off][/B] – text below the arrow (no value: switch)
+[*][B]/wsarrow combat [on | off][/B] – hide in combat
+[*][B]/wsarrow near <0-100>[/B] – hide when closer than this many meters (0 = never)
+[*][B]/wsarrow size <24-160>[/B], [B]font <12-36>[/B], [B]alpha <20-100>[/B] – arrow size, text size, opacity in %
+[*][B]/wsarrow color known | unknown <RRGGBB | reset>[/B] – colors, e.g. [I]/wsarrow color unknown FFC740[/I]
+[*][B]/wsarrow account[/B] | [B]character[/B] – same settings for all characters / own settings for this character
+[*][B]/wsarrow copy[/B] – list characters, [B]/wsarrow copy <name | account>[/B] – copy their settings
+[*][B]/wsarrow show[/B] – current settings, [B]settings[/B] – settings menu, [B]help[/B] – all commands, [B]debug[/B] – information for bug reports
+[/LIST]
 
 [B]Notes[/B]
 [LIST]
@@ -44,13 +54,23 @@ Ein kleiner, verschiebbarer Pfeil im HUD zeigt in Luftlinie zum nächsten Wegsch
 [*]Keine Anzeige in Gebäuden, die man durch eine Tür betritt (Gasthäuser, Banken, Läden ...)
 [*]Wahlweise ausgeblendet im Kampf oder nahe am Wegschrein
 [*]Tastenbelegungen: ein-/ausblenden, Ziel wechseln
-[*]Einstellungen mit LibAddonMenu-2.0 (optional)
+[*]Einstellungsmenü mit LibAddonMenu-2.0 (optional) – jede Einstellung geht auch als Chat-Befehl
 [/LIST]
 
-[B]Befehle[/B]
-/wsarrow – ein-/ausblenden
-/wsarrow unlock – Pfeil mit der Maus verschieben, danach /wsarrow lock
-/wsarrow target – Ziel wechseln, /wsarrow reset – Position zurücksetzen, /wsarrow settings
+[B]Befehle[/B] (die Schlüsselwörter sind in jeder Sprache englisch)
+[LIST]
+[*][B]/wsarrow[/B] – ein-/ausblenden (auch [B]on[/B], [B]off[/B])
+[*][B]/wsarrow unlock[/B] – Pfeil mit der Maus verschieben, danach [B]/wsarrow lock[/B]; [B]/wsarrow reset[/B] – Startposition
+[*][B]/wsarrow target [all | unknown | known][/B] – Ziel: alle / unbekannte / bekannte Wegschreine (ohne Wert: nächstes)
+[*][B]/wsarrow name | status | distance [on | off][/B] – Text unter dem Pfeil (ohne Wert: umschalten)
+[*][B]/wsarrow combat [on | off][/B] – im Kampf ausblenden
+[*][B]/wsarrow near <0-100>[/B] – ausblenden näher als so viele Meter (0 = nie)
+[*][B]/wsarrow size <24-160>[/B], [B]font <12-36>[/B], [B]alpha <20-100>[/B] – Pfeilgröße, Textgröße, Deckkraft in %
+[*][B]/wsarrow color known | unknown <RRGGBB | reset>[/B] – Farben, z. B. [I]/wsarrow color unknown FFC740[/I]
+[*][B]/wsarrow account[/B] | [B]character[/B] – gleiche Einstellungen für alle Charaktere / eigene für diesen Charakter
+[*][B]/wsarrow copy[/B] – Charaktere auflisten, [B]/wsarrow copy <Name | account>[/B] – deren Einstellungen übernehmen
+[*][B]/wsarrow show[/B] – aktuelle Einstellungen, [B]settings[/B] – Einstellungsmenü, [B]help[/B] – alle Befehle, [B]debug[/B] – Angaben für Fehlermeldungen
+[/LIST]
 
 [B]Hinweise[/B]
 [LIST]

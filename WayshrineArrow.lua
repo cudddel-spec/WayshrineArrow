@@ -671,40 +671,199 @@ end
 
 local settingsPanel
 
+-- Slash commands: every setting of the settings menu is also available without LibAddonMenu-2.0.
+-- Keywords are English in every language; /wsarrow help lists them.
+
+local TARGET_KEYWORDS = { all = TARGET_ALL, unknown = TARGET_UNKNOWN, known = TARGET_KNOWN }
+
+-- on/off settings: keyword = { setting, label of the settings menu }
+local TOGGLES = {
+    name = { "showName", SI_WAYSHRINEARROW_OPT_SHOW_NAME },
+    status = { "showStatus", SI_WAYSHRINEARROW_OPT_SHOW_STATUS },
+    distance = { "showDistance", SI_WAYSHRINEARROW_OPT_SHOW_DISTANCE },
+    combat = { "hideInCombat", SI_WAYSHRINEARROW_OPT_HIDE_COMBAT },
+}
+
+-- number settings: keyword = { setting, label, min, max, factor between command value and setting }
+local NUMBERS = {
+    size = { "arrowSize", SI_WAYSHRINEARROW_OPT_SIZE, 24, 160, 1 },
+    font = { "fontSize", SI_WAYSHRINEARROW_OPT_FONT_SIZE, 12, 36, 1 },
+    alpha = { "alpha", SI_WAYSHRINEARROW_OPT_ALPHA, 20, 100, 100 },
+    near = { "hideNear", SI_WAYSHRINEARROW_OPT_HIDE_NEAR, 0, 100, 1 },
+}
+
+local COLORS = {
+    known = { "knownColor", SI_WAYSHRINEARROW_OPT_KNOWN_COLOR },
+    unknown = { "unknownColor", SI_WAYSHRINEARROW_OPT_UNKNOWN_COLOR },
+}
+
+local BOOLEAN_WORDS = { on = true, off = false, ["1"] = true, ["0"] = false, an = true, aus = false }
+
+local function OnOffText(value)
+    return GetString(value and SI_WAYSHRINEARROW_VALUE_ON or SI_WAYSHRINEARROW_VALUE_OFF)
+end
+
+local function PrintSetting(labelId, valueText)
+    Print(zo_strformat(SI_WAYSHRINEARROW_MSG_SET, GetString(labelId), valueText))
+end
+
+local function PrintInvalid()
+    Print(GetString(SI_WAYSHRINEARROW_MSG_INVALID))
+end
+
+-- Applies a changed setting: layout settings resize the arrow, the combat setting needs other events.
+local function ApplySetting(key)
+    if key == "hideInCombat" then
+        WA.CheckEvents()
+    elseif key == "arrowSize" or key == "fontSize" or key == "alpha" then
+        ApplyLayout()
+    end
+    lastText = nil
+end
+
+local function ColorToHex(color)
+    return string.format("%02X%02X%02X", floor(color[1] * 255 + 0.5), floor(color[2] * 255 + 0.5),
+        floor(color[3] * 255 + 0.5))
+end
+
+local function PrintHelp()
+    for line in string.gmatch(GetString(SI_WAYSHRINEARROW_HELP), "[^\n]+") do
+        d(line)
+    end
+end
+
+local function PrintSettings()
+    Print(zo_strformat(SI_WAYSHRINEARROW_MSG_INFO_HEADER,
+        GetString(characterSV.useAccountWide and SI_WAYSHRINEARROW_SCOPE_ACCOUNT or SI_WAYSHRINEARROW_SCOPE_CHARACTER)))
+    PrintSetting(SI_WAYSHRINEARROW_OPT_ENABLED, OnOffText(sv.enabled))
+    PrintSetting(SI_WAYSHRINEARROW_OPT_TARGET, GetString(TARGET_STRINGS[sv.target]))
+    PrintSetting(SI_WAYSHRINEARROW_OPT_LOCKED, OnOffText(sv.locked))
+    for _, keyword in ipairs({ "name", "status", "distance", "combat" }) do
+        local toggle = TOGGLES[keyword]
+        PrintSetting(toggle[2], OnOffText(sv[toggle[1]]))
+    end
+    for _, keyword in ipairs({ "near", "size", "font", "alpha" }) do
+        local number = NUMBERS[keyword]
+        PrintSetting(number[2], tostring(floor(sv[number[1]] * number[5] + 0.5)))
+    end
+    for _, keyword in ipairs({ "known", "unknown" }) do
+        local color = COLORS[keyword]
+        PrintSetting(color[2], ColorToHex(sv[color[1]]))
+    end
+end
+
+-- /wsarrow copy: list the sources; /wsarrow copy <character name | account>: copy from it
+local function CopyCommand(rest)
+    local names, ids = GetCopySources()
+    if rest == "" then
+        Print(zo_strformat(SI_WAYSHRINEARROW_MSG_COPY_SOURCES, table.concat(names, ", ")))
+        return
+    end
+    local wanted = zo_strlower(rest)
+    for i = 1, #ids do
+        local matches = zo_strlower(names[i]) == wanted or (wanted == "account" and ids[i] == ACCOUNT_WIDE_KEY)
+        if matches and CopySettingsFrom(ids[i]) then
+            Print(zo_strformat(SI_WAYSHRINEARROW_MSG_COPIED, names[i]))
+            return
+        end
+    end
+    Print(zo_strformat(SI_WAYSHRINEARROW_MSG_COPY_UNKNOWN, rest))
+end
+
+local function SetColorCommand(value)
+    local which, hex = value:match("^(%S+)%s*(%S*)$")
+    local color = which and COLORS[which]
+    if not color then
+        PrintInvalid()
+        return
+    end
+    local key, labelId = color[1], color[2]
+    if hex == "reset" then
+        sv[key] = ZO_DeepTableCopy(DEFAULTS[key])
+    else
+        local r, g, b = hex:gsub("^#", ""):match("^(%x%x)(%x%x)(%x%x)$")
+        if not r then
+            PrintInvalid()
+            return
+        end
+        sv[key] = { tonumber(r, 16) / 255, tonumber(g, 16) / 255, tonumber(b, 16) / 255, 1 }
+    end
+    ApplySetting(key)
+    PrintSetting(labelId, ColorToHex(sv[key]))
+end
+
 local function OnSlashCommand(args)
-    local cmd = zo_strlower(zo_strtrim(args or ""))
+    local cmd, rest = zo_strtrim(args or ""):match("^(%S*)%s*(.-)$")
+    cmd = zo_strlower(cmd)
+    local value = zo_strlower(rest)
+
     if cmd == "" then
         WA.ToggleEnabled()
-    elseif cmd == "on" then
-        SetEnabled(true)
-        Print(GetString(SI_WAYSHRINEARROW_MSG_ON))
-    elseif cmd == "off" then
-        SetEnabled(false)
-        Print(GetString(SI_WAYSHRINEARROW_MSG_OFF))
+    elseif cmd == "on" or cmd == "off" then
+        SetEnabled(cmd == "on")
+        Print(GetString(sv.enabled and SI_WAYSHRINEARROW_MSG_ON or SI_WAYSHRINEARROW_MSG_OFF))
     elseif cmd == "lock" then
         SetLocked(true)
         Print(GetString(SI_WAYSHRINEARROW_MSG_LOCKED))
     elseif cmd == "unlock" then
         SetLocked(false)
         Print(GetString(SI_WAYSHRINEARROW_MSG_UNLOCKED))
-    elseif cmd == "target" then
-        WA.CycleTarget()
     elseif cmd == "reset" then
         sv.posX, sv.posY = DEFAULTS.posX, DEFAULTS.posY
         ApplyLayout()
         Print(GetString(SI_WAYSHRINEARROW_MSG_RESET))
+    elseif cmd == "target" then
+        if value == "" then
+            WA.CycleTarget()
+        elseif TARGET_KEYWORDS[value] then
+            sv.target = TARGET_KEYWORDS[value]
+            lastText = nil
+            Print(zo_strformat(SI_WAYSHRINEARROW_MSG_TARGET, GetString(TARGET_STRINGS[sv.target])))
+        else
+            PrintInvalid()
+        end
+    elseif TOGGLES[cmd] then
+        local key, labelId = TOGGLES[cmd][1], TOGGLES[cmd][2]
+        local enabled = BOOLEAN_WORDS[value]
+        if value == "" then enabled = not sv[key] end
+        if enabled == nil then
+            PrintInvalid()
+        else
+            sv[key] = enabled
+            ApplySetting(key)
+            PrintSetting(labelId, OnOffText(enabled))
+        end
+    elseif NUMBERS[cmd] then
+        local key, labelId, min, max, factor = unpack(NUMBERS[cmd])
+        local number = tonumber(value)
+        if not number then
+            PrintInvalid()
+        else
+            number = zo_clamp(floor(number + 0.5), min, max)
+            sv[key] = number / factor
+            ApplySetting(key)
+            PrintSetting(labelId, tostring(number))
+        end
+    elseif cmd == "color" then
+        SetColorCommand(value)
     elseif cmd == "account" then
         SetUseAccountWide(true)
         Print(GetString(SI_WAYSHRINEARROW_MSG_ACCOUNT))
     elseif cmd == "character" then
         SetUseAccountWide(false)
         Print(GetString(SI_WAYSHRINEARROW_MSG_CHARACTER))
+    elseif cmd == "copy" then
+        CopyCommand(rest)
+    elseif cmd == "show" then
+        PrintSettings()
     elseif cmd == "debug" then
         PrintDebug()
     elseif cmd == "settings" and settingsPanel then
         LibAddonMenu2:OpenToPanel(settingsPanel)
+    elseif cmd == "settings" then
+        Print(GetString(SI_WAYSHRINEARROW_MSG_NO_LAM))
     else
-        Print(GetString(SI_WAYSHRINEARROW_MSG_HELP))
+        PrintHelp()
     end
 end
 
