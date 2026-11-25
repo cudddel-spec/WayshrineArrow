@@ -14,6 +14,7 @@ INCLUDE = [
     f"{ADDON}.txt",
     f"{ADDON}.lua",
     "lang",
+    "textures",
     "LICENSE",
     "README.txt",
     "Bindings.xml",

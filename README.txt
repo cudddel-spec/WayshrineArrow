@@ -1,4 +1,4 @@
-WayshrineArrow 0.1.0
+WayshrineArrow 0.2.0
 ====================
 
 AI disclosure: The code of this addon was written with the help of an AI
@@ -13,6 +13,8 @@ to travel on foot, explore a map anew or just want more immersion.
 
 - Target: nearest wayshrine, nearest unknown wayshrine or nearest known one
   (setting, keybind or /wsarrow target)
+- 3D look: the arrow lies flat and turns in the horizontal plane; the tilt
+  follows the camera (adjustable, 0 = flat 2D arrow)
 - Optional below the arrow: name, status (known / unknown) and distance
 - Separate colors for known and unknown wayshrines
 - Hidden in delves, public and group dungeons, arenas, the Infinite Archive,
@@ -38,6 +40,7 @@ Commands (keywords are English in every language):
                                   (without on/off the setting is switched)
   /wsarrow near <0-100>           hide when closer than this many meters
   /wsarrow size <24-160>          arrow size
+  /wsarrow tilt <0-70>            3D tilt in degrees (0 = flat 2D arrow)
   /wsarrow font <12-36>           text size
   /wsarrow alpha <20-100>         opacity in percent
   /wsarrow color known <RRGGBB>   color for known wayshrines, e.g. 73D9FF
@@ -68,6 +71,8 @@ Immersion möchten.
 
 - Ziel: nächster Wegschrein, nächster unbekannter oder nächster bekannter
   (Einstellung, Tastenbelegung oder /wsarrow target)
+- 3D-Darstellung: Der Pfeil liegt flach und dreht sich in der Waagerechten;
+  die Neigung folgt der Kamera (einstellbar, 0 = flacher 2D-Pfeil)
 - Wahlweise unter dem Pfeil: Name, Status (bekannt / unbekannt) und Entfernung
 - Eigene Farben für bekannte und unbekannte Wegschreine
 - Keine Anzeige in Gewölben, öffentlichen Verliesen, Gruppenverliesen, Arenen,
@@ -94,6 +99,7 @@ Befehle (die Schlüsselwörter sind in jeder Sprache englisch):
                                   (ohne on/off wird umgeschaltet; an/aus geht auch)
   /wsarrow near <0-100>           ausblenden näher als so viele Meter
   /wsarrow size <24-160>          Pfeilgröße
+  /wsarrow tilt <0-70>            3D-Neigung in Grad (0 = flacher 2D-Pfeil)
   /wsarrow font <12-36>           Textgröße
   /wsarrow alpha <20-100>         Deckkraft in Prozent
   /wsarrow color known <RRGGBB>   Farbe für bekannte Wegschreine, z. B. 73D9FF

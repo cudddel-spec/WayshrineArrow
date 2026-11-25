@@ -4,10 +4,11 @@
 
 [I]Deutsche Beschreibung weiter unten.[/I]
 
-A small, movable arrow on your HUD points in a straight line to the nearest wayshrine of the map you are on – known or unknown. Made for players who like to travel on foot, explore a map anew or just want more immersion.
+A small, movable 3D arrow on your HUD points in a straight line to the nearest wayshrine of the map you are on – known or unknown. Made for players who like to travel on foot, explore a map anew or just want more immersion.
 
 [LIST]
 [*]Target: nearest wayshrine, nearest [B]unknown[/B] wayshrine (great for exploring – after you discover one, the arrow turns to the next) or nearest known one
+[*][B]3D look:[/B] the arrow lies flat and turns in the horizontal plane. The tilt follows your camera – look down and you see it from above, look up and you see it from below (adjustable, 0 = flat 2D arrow)
 [*]Optional below the arrow: name, status (known / unknown) and distance
 [*]Separate colors for known and unknown wayshrines, size, text size, opacity
 [*]Hidden in delves, public and group dungeons, arenas, the Infinite Archive, trials, battlegrounds and houses
@@ -25,7 +26,7 @@ A small, movable arrow on your HUD points in a straight line to the nearest ways
 [*][B]/wsarrow name | status | distance [on | off][/B] – text below the arrow (no value: switch)
 [*][B]/wsarrow combat [on | off][/B] – hide in combat
 [*][B]/wsarrow near <0-100>[/B] – hide when closer than this many meters (0 = never)
-[*][B]/wsarrow size <24-160>[/B], [B]font <12-36>[/B], [B]alpha <20-100>[/B] – arrow size, text size, opacity in %
+[*][B]/wsarrow size <24-160>[/B], [B]tilt <0-70>[/B], [B]font <12-36>[/B], [B]alpha <20-100>[/B] – arrow size, 3D tilt in degrees (0 = flat), text size, opacity in %
 [*][B]/wsarrow color known | unknown <RRGGBB | reset>[/B] – colors, e.g. [I]/wsarrow color unknown FFC740[/I]
 [*][B]/wsarrow account[/B] | [B]character[/B] – same settings for all characters / own settings for this character
 [*][B]/wsarrow copy[/B] – list characters, [B]/wsarrow copy <name | account>[/B] – copy their settings
@@ -44,10 +45,11 @@ A small, movable arrow on your HUD points in a straight line to the nearest ways
 
 [COLOR="Orange"][B]KI-Hinweis:[/B] Der Code dieses Addons wurde mit Hilfe eines KI-Assistenten (Claude von Anthropic) geschrieben. Der Autor hat ihn geprüft, im Spiel getestet und ist dafür verantwortlich.[/COLOR]
 
-Ein kleiner, verschiebbarer Pfeil im HUD zeigt in Luftlinie zum nächsten Wegschrein der aktuellen Karte – bekannt oder unbekannt. Gedacht für alle, die gern zu Fuß unterwegs sind, eine Karte neu erkunden oder einfach mehr Immersion möchten.
+Ein kleiner, verschiebbarer 3D-Pfeil im HUD zeigt in Luftlinie zum nächsten Wegschrein der aktuellen Karte – bekannt oder unbekannt. Gedacht für alle, die gern zu Fuß unterwegs sind, eine Karte neu erkunden oder einfach mehr Immersion möchten.
 
 [LIST]
 [*]Ziel: nächster Wegschrein, nächster [B]unbekannter[/B] (ideal zum Erkunden – nach der Entdeckung zeigt der Pfeil auf den nächsten) oder nächster bekannter
+[*][B]3D-Darstellung:[/B] Der Pfeil liegt flach und dreht sich in der Waagerechten. Die Neigung folgt der Kamera – beim Blick nach unten siehst du ihn von oben, beim Blick nach oben von unten (einstellbar, 0 = flacher 2D-Pfeil)
 [*]Wahlweise unter dem Pfeil: Name, Status (bekannt / unbekannt) und Entfernung
 [*]Eigene Farben für bekannte und unbekannte Wegschreine, Größe, Textgröße, Deckkraft
 [*]Keine Anzeige in Gewölben, öffentlichen Verliesen, Gruppenverliesen, Arenen, dem Endlosen Archiv, Prüfungen, Schlachtfeldern und Häusern
@@ -65,7 +67,7 @@ Ein kleiner, verschiebbarer Pfeil im HUD zeigt in Luftlinie zum nächsten Wegsch
 [*][B]/wsarrow name | status | distance [on | off][/B] – Text unter dem Pfeil (ohne Wert: umschalten)
 [*][B]/wsarrow combat [on | off][/B] – im Kampf ausblenden
 [*][B]/wsarrow near <0-100>[/B] – ausblenden näher als so viele Meter (0 = nie)
-[*][B]/wsarrow size <24-160>[/B], [B]font <12-36>[/B], [B]alpha <20-100>[/B] – Pfeilgröße, Textgröße, Deckkraft in %
+[*][B]/wsarrow size <24-160>[/B], [B]tilt <0-70>[/B], [B]font <12-36>[/B], [B]alpha <20-100>[/B] – Pfeilgröße, 3D-Neigung in Grad (0 = flach), Textgröße, Deckkraft in %
 [*][B]/wsarrow color known | unknown <RRGGBB | reset>[/B] – Farben, z. B. [I]/wsarrow color unknown FFC740[/I]
 [*][B]/wsarrow account[/B] | [B]character[/B] – gleiche Einstellungen für alle Charaktere / eigene für diesen Charakter
 [*][B]/wsarrow copy[/B] – Charaktere auflisten, [B]/wsarrow copy <Name | account>[/B] – deren Einstellungen übernehmen

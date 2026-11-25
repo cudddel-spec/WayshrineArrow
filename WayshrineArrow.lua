@@ -5,7 +5,7 @@ local WA = WayshrineArrow
 
 local ADDON_NAME = "WayshrineArrow"
 WA.name = ADDON_NAME
-WA.version = "0.1.0"
+WA.version = "0.2.0"
 
 local EM = EVENT_MANAGER
 local UPDATE_NAME = ADDON_NAME .. "_Update"
@@ -20,7 +20,17 @@ local DOOR_VALID_MS = 10000          -- a jump this long after opening a door co
 local DOOR_JUMP = 1000               -- cm between two updates: teleported by a door
 local DOOR_SAME_HEIGHT = 500         -- cm: back at the height of the entrance means outside again
 local INDOOR_RESTORE_RANGE = 15000   -- cm around the place inside where the saved state is restored
-local ARROW_TEXTURE = "EsoUI/Art/MapPins/UI-WorldMapPlayerPip.dds"
+local ARROW_TEXTURE = "WayshrineArrow/textures/arrow.dds"   -- made by tools/make_arrow_texture.py
+-- 3D look: the arrow lies on a plane tilted away from the viewer; darker copies below it give it some thickness
+local BODY_TEXTURE = "WayshrineArrow/textures/arrow_body.dds"   -- same shape without rim, for the side
+-- many close copies in one color form one continuous side (different colors would show as stripes)
+local SHADOW_COUNT = 8
+local SHADOW_SHADE = 0.4   -- color factor of the side
+local THICKNESS = 0.12                             -- thickness of the arrow body relative to its size
+local TILT_STEP = 0.5                              -- degrees, smaller changes are not applied
+local FLIP_PITCH = 30                              -- degrees of looking up where the arrow turns to a view from below
+local MAX_EDGE_TILT = 70                           -- degrees, the arrow never turns closer to edge-on than this
+local CAMERA_CONTROL_NAME = "WayshrineArrow_Camera"
 
 local TARGET_ALL = 1
 local TARGET_UNKNOWN = 2
@@ -40,6 +50,7 @@ local DEFAULTS = {
     arrowSize = 56,
     fontSize = 18,
     alpha = 1,
+    tilt = 55,   -- degrees the arrow plane is tilted away from the viewer, 0 = flat 2D arrow
     showName = true,
     showStatus = true,
     showDistance = true,
@@ -65,6 +76,10 @@ local accountSV, characterSV
 local sv     -- settings in use: accountSV or characterSV
 local data   -- account-wide data: accountSV
 local window, content, backdrop, arrow, label
+local planes = {}    -- tilted planes: [1] holds the arrow, the others the shadow copies
+local shadows = {}   -- shadow copies of the arrow texture, top to bottom
+local cameraControl  -- 3D render space that reads the camera orientation
+local ApplyTilt
 
 -- state
 local nodes = {}            -- wayshrines of the cached map: { known, name, x, y }
@@ -313,10 +328,75 @@ local function SetText(text)
     end
 end
 
+local function SetArrowRotation(angle)
+    arrow:SetTextureRotation(angle)
+    for i = 1, #shadows do
+        shadows[i]:SetTextureRotation(angle)
+    end
+end
+
+local function SetArrowColor(r, g, b, a)
+    arrow:SetColor(r, g, b, a)
+    for i = 1, #shadows do
+        local shade = SHADOW_SHADE
+        shadows[i]:SetColor(r * shade, g * shade, b * shade, a)
+    end
+end
+
+-- 3D look: tilt every plane, stack the shadow copies below the arrow (on screen, so it also works
+-- without perspective) and move the text up to the visible bottom of the tilted arrow
+local appliedTilt   -- degrees, to skip unchanged updates
+
+function ApplyTilt(degrees)
+    if appliedTilt and math.abs(degrees - appliedTilt) < TILT_STEP then return end
+    appliedTilt = degrees
+    local size = sv.arrowSize
+    local tilt = math.rad(degrees)
+    local thickness = size * THICKNESS * math.sin(tilt)
+    for i = 1, #planes do
+        local plane = planes[i]
+        local offsetY = thickness * (i - 1) / #shadows
+        plane:ClearAnchors()
+        plane:SetAnchor(TOPLEFT, content, TOPLEFT, 0, offsetY)
+        plane:SetAnchor(BOTTOMRIGHT, content, BOTTOMRIGHT, 0, offsetY)
+        plane:SetTransformRotationX(tilt)
+        plane:SetHidden(i > 1 and degrees == 0)
+    end
+    label:ClearAnchors()
+    -- above 90 degrees the arrow is seen from below, upside down, at the same visible height
+    label:SetAnchor(TOP, content, BOTTOM, 0, 2 + thickness - size * (1 - math.abs(math.cos(tilt))) / 2)
+end
+
+-- Degrees the camera looks up (negative: down).
+local function GetCameraPitch()
+    Set3DRenderSpaceToCurrentCamera(CAMERA_CONTROL_NAME)
+    local _, forwardY = cameraControl:Get3DRenderSpaceForward()
+    return math.deg(math.asin(zo_clamp(forwardY, -1, 1)))
+end
+
+-- The tilt setting applies to a horizontal view. Looking down turns the arrow towards a view from above (0 degrees).
+-- Looking up, the arrow seems to float above: at FLIP_PITCH it flips over to a view from below, which turns
+-- towards 180 degrees. Rotated past 90 degrees, the plane also turns the arrow upside down on screen, as an arrow
+-- above the player pointing forward would look from below. Tilts near 90 degrees are skipped: edge-on, the stacked
+-- copies would show up as separate lines.
+local function GetCameraTilt()
+    if sv.tilt == 0 then return 0 end
+    local pitch = GetCameraPitch()
+    local base = math.min(sv.tilt, MAX_EDGE_TILT)
+    if pitch <= 0 then
+        return base * (90 + pitch) / 90
+    elseif pitch <= FLIP_PITCH then
+        return base + (MAX_EDGE_TILT - base) * pitch / FLIP_PITCH
+    end
+    local fromBelow = 180 - MAX_EDGE_TILT
+    return fromBelow + (180 - fromBelow) * (pitch - FLIP_PITCH) / (90 - FLIP_PITCH)
+end
+
 local function ShowPlaceholder()
     content:SetHidden(false)
-    arrow:SetTextureRotation(0)
-    arrow:SetColor(1, 1, 1, 1)
+    ApplyTilt(sv.tilt)
+    SetArrowRotation(0)
+    SetArrowColor(1, 1, 1, 1)
     SetText(GetString(SI_WAYSHRINEARROW_DRAG_HINT))
 end
 
@@ -383,9 +463,10 @@ local function OnUpdate()
 
     -- Map x grows to the east, y to the south. Heading and texture rotation count counter-clockwise from north.
     local bearing = atan2(px - node.x, py - node.y)
-    arrow:SetTextureRotation(bearing - GetPlayerCameraHeading())
+    ApplyTilt(GetCameraTilt())
+    SetArrowRotation(bearing - GetPlayerCameraHeading())
     local color = node.known and sv.knownColor or sv.unknownColor
-    arrow:SetColor(unpack(color))
+    SetArrowColor(unpack(color))
     SetText(BuildText(node, meters))
     content:SetHidden(false)
 end
@@ -397,6 +478,8 @@ local function ApplyLayout()
     window:SetAnchor(CENTER, GuiRoot, CENTER, sv.posX, sv.posY)
     -- on the content, not the window: the HUD fade fragment animates the window alpha back to 1
     content:SetAlpha(sv.alpha)
+    appliedTilt = nil
+    ApplyTilt(sv.tilt)
     label:SetFont(string.format("$(BOLD_FONT)|%d|soft-shadow-thick", sv.fontSize))
     window:SetMovable(not sv.locked)
     window:SetMouseEnabled(not sv.locked)
@@ -428,12 +511,31 @@ local function CreateControls()
     content:SetAnchorFill(window)
     content:SetHidden(true)
 
-    arrow = WINDOW_MANAGER:CreateControl("WayshrineArrow_WindowArrow", content, CT_TEXTURE)
-    arrow:SetAnchorFill(content)
-    arrow:SetTexture(ARROW_TEXTURE)
+    -- planes[1] holds the arrow, planes[2..] the shadow copies; anchors and tilt are set in ApplyLayout.
+    -- Created from the deepest copy up to the arrow, so that the arrow is drawn last, on top.
+    for i = SHADOW_COUNT + 1, 1, -1 do
+        local plane = WINDOW_MANAGER:CreateControl("WayshrineArrow_WindowPlane" .. i, content, CT_CONTROL)
+        plane:SetTransformNormalizedOriginPoint(0.5, 0.5)
+        plane:SetDrawLevel(SHADOW_COUNT + 1 - i)
+        local texture = WINDOW_MANAGER:CreateControl("WayshrineArrow_WindowArrow" .. i, plane, CT_TEXTURE)
+        texture:SetAnchorFill(plane)
+        texture:SetTexture(i == 1 and ARROW_TEXTURE or BODY_TEXTURE)
+        texture:SetDrawLevel(SHADOW_COUNT + 1 - i)
+        planes[i] = plane
+        if i == 1 then
+            arrow = texture
+        else
+            shadows[i - 1] = texture
+        end
+    end
 
     label = WINDOW_MANAGER:CreateControl("WayshrineArrow_WindowLabel", content, CT_LABEL)
-    label:SetAnchor(TOP, content, BOTTOM, 0, 2)
+    label:SetDrawLevel(SHADOW_COUNT + 2)
+
+    cameraControl = WINDOW_MANAGER:CreateControl(CAMERA_CONTROL_NAME, window, CT_TEXTURE)
+    cameraControl:SetMouseEnabled(false)
+    cameraControl:Create3DRenderSpace()
+    cameraControl:SetHidden(true)
     label:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
     label:SetColor(1, 1, 1, 1)
 
@@ -667,6 +769,11 @@ local function PrintDebug()
     Print(string.format("indoor %s, last door %s", indoor and ("yes (" .. indoor.name .. ")") or "no", lastDoor))
     Print(string.format("player %.4f / %.4f, heading %.2f, camera %.2f, scale %s",
         px, py, heading, GetPlayerCameraHeading(), scale and string.format("%.0f (span %.3f)", scale.ratio, scale.span) or "-"))
+    -- the camera's right vector stays horizontal, also when looking straight up or down
+    Set3DRenderSpaceToCurrentCamera(CAMERA_CONTROL_NAME)
+    local rightX, rightY, rightZ = cameraControl:Get3DRenderSpaceRight()
+    Print(string.format("camera up %.1f°, tilt %d° -> %.1f°, right %.2f / %.2f / %.2f -> heading %.2f",
+        GetCameraPitch(), sv.tilt, GetCameraTilt(), rightX, rightY, rightZ, atan2(-rightZ, rightX)))
 end
 
 local settingsPanel
@@ -690,6 +797,7 @@ local NUMBERS = {
     font = { "fontSize", SI_WAYSHRINEARROW_OPT_FONT_SIZE, 12, 36, 1 },
     alpha = { "alpha", SI_WAYSHRINEARROW_OPT_ALPHA, 20, 100, 100 },
     near = { "hideNear", SI_WAYSHRINEARROW_OPT_HIDE_NEAR, 0, 100, 1 },
+    tilt = { "tilt", SI_WAYSHRINEARROW_OPT_TILT, 0, 70, 1 },
 }
 
 local COLORS = {
@@ -715,7 +823,7 @@ end
 local function ApplySetting(key)
     if key == "hideInCombat" then
         WA.CheckEvents()
-    elseif key == "arrowSize" or key == "fontSize" or key == "alpha" then
+    elseif key == "arrowSize" or key == "fontSize" or key == "alpha" or key == "tilt" then
         ApplyLayout()
     end
     lastText = nil
@@ -742,7 +850,7 @@ local function PrintSettings()
         local toggle = TOGGLES[keyword]
         PrintSetting(toggle[2], OnOffText(sv[toggle[1]]))
     end
-    for _, keyword in ipairs({ "near", "size", "font", "alpha" }) do
+    for _, keyword in ipairs({ "near", "size", "tilt", "font", "alpha" }) do
         local number = NUMBERS[keyword]
         PrintSetting(number[2], tostring(floor(sv[number[1]] * number[5] + 0.5)))
     end
@@ -1032,6 +1140,18 @@ local function CreateSettings()
                 ApplyLayout()
             end,
             default = DEFAULTS.arrowSize,
+        },
+        {
+            type = "slider",
+            name = GetString(SI_WAYSHRINEARROW_OPT_TILT),
+            tooltip = GetString(SI_WAYSHRINEARROW_OPT_TILT_TT),
+            min = 0, max = 70, step = 5,
+            getFunc = function() return sv.tilt end,
+            setFunc = function(value)
+                sv.tilt = value
+                ApplyLayout()
+            end,
+            default = DEFAULTS.tilt,
         },
         {
             type = "slider",

@@ -1,3 +1,9 @@
+[B]0.2.0[/B]
+[LIST]
+[*]3D arrow: it lies flat and turns in the horizontal plane, with a visible edge. The tilt follows the camera: looking down shows it from above, looking up from below. New setting "3D tilt" (0 = flat 2D arrow as before), also /wsarrow tilt <0-70>.
+[*]New arrow texture without a drawn-in light direction, so it looks the same in every direction.
+[/LIST]
+
 [B]0.1.0[/B]
 [LIST]
 [*]First version: HUD arrow to the nearest (known / unknown) wayshrine of the current map, name, status and distance, hidden in instances and inside buildings. Settings per server and account, optionally per character, copy settings from another character. All settings are also available as chat commands (/wsarrow help).
